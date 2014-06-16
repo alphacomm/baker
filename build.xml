@@ -1,50 +1,51 @@
-<project name="Default Build Project" default="build" basedir=".">
-    <property file="build.properties" />
+<project name="baker" default="build" basedir=".">
+    <property file="${phing.dir.baker}/build.properties"/>
 
     <!-- Imports of other targets -->
-    <import file="${dir.autophing}/phplint/phplint.xml" />
-    <import file="${dir.autophing}/phpunit/phpunit.xml" />
-    <import file="${dir.autophing}/phpmd/phpmd.xml" />
-    <import file="${dir.autophing}/pdepend/pdepend.xml" />
-    <import file="${dir.autophing}/phpcs/phpcs.xml" />
+    <import file="${dir.autophing}/phplint/phplint.xml"/>
+    <import file="${dir.autophing}/phpunit/phpunit.xml"/>
+    <import file="${dir.autophing}/phpmd/phpmd.xml"/>
+    <import file="${dir.autophing}/pdepend/pdepend.xml"/>
+    <import file="${dir.autophing}/phpcs/phpcs.xml"/>
 
-    <target name="build" depends="-prepare">
-        <parallel threadCount="3">
-            <!--<phingcall target="phplint"/>-->
-            <phingcall target="phpmd"/>
-            <phingcall target="phpunit"/>
-            <phingcall target="pdepend"/>
-            <phingcall target="phpcs" />
-            <phingcall target="phploc"/>
-            <phingcall target="phpcpd"/>
-        </parallel>
-    </target>
+    <target name="build" description="Creates a full build."
+            depends="-prepare, phplint, phpunit, phpmd, pdepend, phpcs, phploc, phpcpd, phpcb, phpdoc"/>
 
     <target name="clean" description="Cleanup build artifacts">
         <delete dir="${dir.build}" includeemptydirs="true"/>
     </target>
 
     <target name="-prepare" hidden="true" depends="clean" description="Prepare for build">
-        <mkdir dir="${dir.build}"/>
         <mkdir dir="${dir.api-docs}"/>
         <mkdir dir="${dir.code-coverage}"/>
         <mkdir dir="${dir.code-browser}"/>
         <mkdir dir="${dir.pdepend}/build/pdepend"/>
-        <mkdir dir="${dir.xml-files}" />
+        <mkdir dir="${dir.xml-files}"/>
     </target>
 
-    <target name="phpdox" description="Generates API Documentation">
-        <exec passthru="${passthru}" executable="${phpdox.file}">
-            <arg value="--file" />
-            <arg path="${phpdox.config}" />
+    <target name="phpdoc" description="Generates API Documentation">
+        <exec passthru="${passthru}" executable="${phpdoc.file}">
+            <arg value="--quiet"/>
+            <arg value="--template"/>
+            <arg value="${phpdoc.template}"/>
+            <arg value="--directory"/>
+            <arg value="${phpdoc.source}"/>
+            <arg value="--target"/>
+            <arg value="${dir.api-docs}"/>
         </exec>
+        <delete includeemptydirs="true">
+            <fileset dir="${dir.api-docs}">
+                <include name="**/*.dat"/>
+            </fileset>
+        </delete>
     </target>
 
     <target name="phploc" description="Measure project size using PHPLOC">
         <exec passthru="${passthru}" executable="${phploc.file}">
-            <arg value="--count-tests" />
-            <arg value="--log-xml" />
-            <arg path="${phploc.xml.file}" />
+            <arg value="--count-tests"/>
+            <arg value="--log-xml"/>
+            <arg path="${phploc.xml.file}"/>
+            <arg path="${phploc.source}"/>
         </exec>
     </target>
 
@@ -53,6 +54,16 @@
             <arg value="--log-pmd"/>
             <arg value="${phpcpd.xml.file}"/>
             <arg value="${phpcpd.source}"/>
+        </exec>
+    </target>
+
+    <target name="phpcb" depends="phpunit, phpmd, phpcs"
+            description="Create a code browser that also shows violations.">
+        <exec passthru="${passthru}" executable="${phpcb.file}">
+            <arg value="--log"/>
+            <arg value="${dir.xml-files}"/>
+            <arg value="--output"/>
+            <arg value="${dir.code-browser}"/>
         </exec>
     </target>
 </project>
