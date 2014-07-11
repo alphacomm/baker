@@ -1,4 +1,5 @@
 <project name="baker" default="build" basedir=".">
+    <property file="${project.basedir}/build.properties"/>
     <property file="${phing.dir.baker}/build.properties"/>
 
     <!-- Imports of other targets -->
